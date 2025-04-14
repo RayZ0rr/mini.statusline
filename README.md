@@ -10,9 +10,15 @@ See more details in [Features](#features) and [help file](doc/mini-statusline.tx
 
 ---
 
-⦿ This is a part of [mini.nvim](https://github.com/echasnovski/mini.nvim) library. Please use [this link](https://github.com/echasnovski/mini.nvim/blob/main/README.md) if you want to mention this module.
+⦿ This is a fork from [mini.statusline](https://github.com/echasnovski/mini.statusline) which is part of [mini.nvim](https://github.com/echasnovski/mini.nvim) library.
 
-⦿ All contributions (issues, pull requests, discussions, etc.) are done inside of 'mini.nvim'.
+⦿ Here we have flexible components available using the `MiniStatusline.flexibleGroups` which takes in a `opts` table which can have `groups` table and an optional `preprocess` function. Each table in the groups table defines a section with the following fields:
+```lua
+-- @param priority: optional int - A value which decides truncating order of components. Lower priority components are hidden before higher priority ones
+-- @param string: function or array of functions - If function, should return the section string. Array of function can be used to give smaller versions of the string, in which the first one that fits the window width is selected. Eg :- {filename_func, filenameShort_func}
+-- @param hl: optional string - The highlight group
+-- @param hl_fn: optional function - A function which returns a highlight group, useful dynamic highlight groups like those based on vim mode
+```
 
 ⦿ See the repository page to learn about common design principles and configuration recipes.
 

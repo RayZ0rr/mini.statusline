@@ -692,4 +692,83 @@ H.ensure_get_icon = function()
   end
 end
 
+MiniStatusline.utils = H
+MiniStatusline.preProcessGroups = function(groups)
+    local processed = {}
+    for i, g in ipairs(groups) do -- Add index_
+        if type(g) == 'string' then -- Convert strings to tables
+            processed[i] = { index_ = i, string = g }
+        else
+            g = vim.deepcopy(g)
+            g.index_ = i
+            if g.string and type(g.string) ~= 'table' then
+                g.string = {g.string}
+            end
+            processed[i] = g
+        end
+    end
+
+    table.sort(processed, function(a, b)
+        local pri_a = a.priority or 0
+        local pri_b = b.priority or 0
+        if pri_a ~= pri_b then
+            return (pri_a > pri_b)  -- Correct comparison for descending order
+        end
+        return a.index_ < b.index_
+    end)
+
+    local ordered_result = {}
+    for i = 1, #groups do
+        ordered_result[i] = ''
+    end
+
+    return processed, ordered_result
+end
+
+MiniStatusline.flexibleGroups = function(opts)
+    local groups = opts.groups
+    local pre_fn = opts.preprocess or MiniStatusline.preProcessGroups
+    -- Static preprocessing (called once)
+    local processed_groups, ordered_result = pre_fn(groups)
+
+    return function()
+        local win_width = vim.api.nvim_win_get_width(0)
+        local s_width = 0
+        local full_result = false
+
+        for idx, group in ipairs(processed_groups) do -- Process all groups in priority order
+            if full_result then
+                ordered_result[group.index_] = ''
+            else
+                local content = group.hl or (group.hl_fn and group.hl_fn() or '')
+                if content:len() ~= 0 then
+                    content = '%#' .. content .. '#'
+                end
+                local strings = group.string
+                if not strings then
+                    ordered_result[group.index_] = content
+                else
+                    local str, width = '', 0
+                    for _, strFn in ipairs(strings) do
+                        str = strFn()
+                        local stl = vim.api.nvim_eval_statusline(str, {winid = 0, maxwidth = 0})
+                        width = stl.width
+                        if (s_width + width) <= win_width then
+                            s_width = s_width + width
+                            full_result = false
+                            break
+                        else
+                            str = ''
+                            full_result = true
+                        end
+                    end
+                    content = content .. str
+                    ordered_result[group.index_] = content
+                end
+            end
+        end
+        return table.concat(ordered_result)
+    end
+end
+
 return MiniStatusline
